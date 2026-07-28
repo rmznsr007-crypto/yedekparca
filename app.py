@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="Otomol Kör Sayım Sistemi", page_icon="📝", layout="wide")
+st.set_page_config(page_title="Kör Sayım Sistemi", page_icon="📝", layout="wide")
 
 DB_NAME = "stok_sayim.db"
 
@@ -54,7 +54,7 @@ vt_altyapi_kur()
 def giris_ekrani():
     st.markdown("<style>.stApp { max-width: 450px; margin: 0 auto; padding-top: 50px; }</style>", unsafe_allow_html=True)
     st.title("🔐 Sayım Sistemi Giriş")
-    st.caption("Otomol Otomotiv Yetkili Servis")
+    st.caption("Yedek Parça")
     st.write("---")
     
     kullanici = st.text_input("Kullanıcı Adı:").lower().strip()
