@@ -2,21 +2,64 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-st.set_page_config(page_title="Otomol SQL Stok", page_icon="🗄️", layout="wide")
+st.set_page_config(page_title="Otomol Güvenli Stok", page_icon="🔐", layout="wide")
 
-st.title("🗄️ SQL Veri Tabanı Bağlantılı Stok Paneli")
-st.caption("Veriler tamamen ücretsiz SQLite SQL veri tabanından anlık çekilmektedir.")
+# --- KULLANICI GİRİŞ KONTROLÜ (AUTHENTICATION) ---
+def giris_ekrani():
+    """Uygulamanın önüne şifre duvarı örer."""
+    st.markdown("""
+        <style>
+        .stApp { max-width: 450px; margin: 0 auto; padding-top: 50px; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    st.title("🔐 Kurumsal Giriş")
+    st.caption("Otomol Merkezi Stok Yönetim Sistemi")
+    st.write("---")
+    
+    kullanici = st.text_input("Kullanıcı Adı:")
+    sifre = st.text_input("Şifre:", type="password")
+    
+    if st.button("Giriş Yap", use_container_width=True):
+        # Yetkili kullanıcılar ve şifreleri (İleride bunları da SQL'e taşıyabiliriz)
+        yetkili_kullanicilar = {
+            "ramazan": "otomol123",
+            "alibey": "otomol2026",
+            "kerim": "stok456"
+        }
+        
+        if kullanici in yetkili_kullanicilar and yetkili_kullanicilar[kullanici] == sifre:
+            st.session_state.giris_basarili = True
+            st.session_state.aktif_kullanici = kullanici
+            st.success("Giriş başarılı! Yönlendiriliyorsunuz...")
+            st.rerun()
+        else:
+            st.error("❌ Hatalı kullanıcı adı veya şifre!")
+
+# Giriş yapılmadıysa programı burada kes ve sadece giriş ekranını göster
+if 'giris_basarili' not in st.session_state:
+    giris_ekrani()
+    st.stop()
+# -------------------------------------------------
+
+# --- EĞER GİRİŞ BAŞARILIYSA AŞAĞIDAKİ ASIL SİSTEM ÇALIŞIR ---
+
+# Sağ üst köşeye çıkış yapma butonu ekleyelim
+st.sidebar.markdown(f"👤 **Kullanıcı:** {st.session_state.aktif_kullanici.upper()}")
+if st.sidebar.button("Güvenli Çıkış"):
+    del st.session_state.giris_basarili
+    st.rerun()
+
+st.title("📦 Gelişmiş Stok Yönetim Paneli")
+st.caption(f"Otomol Otomotiv - SQL Canlı Altyapısı")
 st.write("---")
 
-# --- SQL VERİ TABANI AYARLARI ---
 DB_NAME = "stok.db"
 
 def vt_baglan():
-    """SQL veri tabanına bağlanır."""
     return sqlite3.connect(DB_NAME)
 
 def vt_altyapi_kur():
-    """Eğer yoksa stok tablosunu SQL içinde otomatik oluşturur."""
     conn = vt_baglan()
     cursor = conn.cursor()
     cursor.execute("""
@@ -31,11 +74,8 @@ def vt_altyapi_kur():
     conn.commit()
     conn.close()
 
-# Altyapıyı çalıştır (Uygulama açılırken kontrol eder)
 vt_altyapi_kur()
-# --------------------------------
 
-# SQL'deki tüm verileri çekip Pandas DataFrame'e dönüştürme fonksiyonu
 def veriyi_yukle_sql():
     conn = vt_baglan()
     df = pd.read_sql_query("SELECT * FROM stoklar", conn)
@@ -80,7 +120,6 @@ with sol_kolon:
                 try:
                     conn = vt_baglan()
                     cursor = conn.cursor()
-                    # Gerçek SQL INSERT sorgusu
                     cursor.execute("""
                         INSERT INTO stoklar (parca_kodu, parca_adi, marka, stok_adedi, raf_no)
                         VALUES (?, ?, ?, ?, ?)
@@ -101,7 +140,6 @@ with sol_kolon:
         if st.button("SQL Stoğunu Güncelle", use_container_width=True):
             conn = vt_baglan()
             cursor = conn.cursor()
-            # Gerçek SQL UPDATE sorgusu
             cursor.execute("UPDATE stoklar SET stok_adedi = ? WHERE parca_kodu = ?", (yeni_stok_adedi, guncellenecek_kod))
             conn.commit()
             
@@ -116,7 +154,6 @@ with sol_kolon:
 with sag_kolon:
     st.subheader("📋 SQL Güncel Stok Listesi")
     if not df.empty:
-        # Sütun isimlerini şık gösterelim
         df.columns = ["Parça Kodu", "Parça Adı", "Marka", "Stok Adedi", "Raf No"]
         st.dataframe(df, use_container_width=True, height=500)
     else:
